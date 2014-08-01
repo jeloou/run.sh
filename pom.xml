@@ -1,0 +1,92 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>com.example</groupId>
+  <artifactId>app</artifactId>
+  <version>0.0.1-SNAPSHOT</version>
+  <packaging>jar</packaging>
+
+  <name>app</name>
+  <url>http://app.example.com</url>
+  <description>Example app</description>
+  <inceptionYear>2014</inceptionYear>
+  
+  <licenses>
+    <license>
+      <name>MIT</name>
+      <url>https://github.com/jeloou/run.sh/blob/master/LICENSE</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+  
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.11</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+  
+  <build>
+    <resources>
+      <resource>
+	<directory>src/main/resources</directory>
+	<filtering>true</filtering>
+      </resource>
+      <resource>
+	<directory>${project.basedir}/bin</directory>
+	<filtering>true</filtering>
+      </resource>
+    </resources>
+    <plugins>
+      <plugin>
+	<groupId>org.apache.maven.plugins</groupId>
+	<artifactId>maven-compiler-plugin</artifactId>
+	<version>3.1</version>
+	<configuration>
+	  <source>1.7</source>
+	  <target>1.7</target>
+	</configuration>
+      </plugin>
+    <plugin>
+      <groupId>com.google.code.maven-replacer-plugin</groupId>
+      <artifactId>replacer</artifactId>
+      <version>1.5.3</version>
+      <executions>
+	<execution>
+	  <phase>prepare-package</phase>
+	  <goals>
+	    <goal>replace</goal>
+	  </goals>
+	</execution>
+      </executions>
+      <configuration>
+	<file>${project.basedir}/bin/${project.artifactId}</file>
+	<replacements>
+	  <replacement>
+	    <token>project.name</token>
+	    <value>${project.name}</value>
+	  </replacement>
+	  <replacement>
+	    <token>project.main</token>
+	    <value>com.example.app.bootstrap.App</value>
+	  </replacement>
+	  <replacement>
+	    <token>project.version</token>
+	    <value>${project.version}</value>
+	  </replacement>
+	</replacements>
+	<delimiters>
+	  <delimiter>@</delimiter>
+	</delimiters>
+      </configuration>
+    </plugin>
+    </plugins>
+  </build>
+</project>

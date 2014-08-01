@@ -1,0 +1,194 @@
+#!/bin/bash
+
+USAGE=$(cat <<EOF
+Usage: $0 [options]
+
+Options:
+  -d, --daemon
+  -c, --config <c>
+  -p, --pid <p>
+  -v, --version
+  -h, --help
+EOF
+)
+
+IS_PACKAGED='@project.name@'
+if [ "$IS_PACKAGED" != '<your project name>' ]; then
+  cat >&2 <<EOF
+Error: you must build the project with Maven before you can run @project.name@.
+EOF
+  exit 1;
+fi
+
+SCRIPT="$0"
+while [ -h "$SCRIPT" ] ; do
+  ls=`ls -ld "$SCRIPT"`
+  # Drop everything prior to ->
+  
+  link=`expr "$ls" : '.*-> \(.*\)$'`
+  if expr "$link" : '/.*' > /dev/null; then
+    SCRIPT="$link"
+  else
+    SCRIPT=`dirname "$SCRIPT"`/"$link"
+  fi
+done
+
+PROJECT_HOME=`dirname $SCRIPT`/..
+PROJECT_HOME=`cd "$PROJECT_HOME"; pwd`
+
+if [ -x "$JAVA_HOME/bin/java" ]; then
+  JAVA="$JAVA_HOME/bin/java"
+else
+  JAVA=`which java`
+fi
+
+if [ ! -x "$JAVA" ]; then
+  echo "Couldn't find any Java binary" >&2
+  exit 1
+fi
+
+PREFIX='@project.name@'
+UPPER_PREFIX=$(tr '[:lower:]' '[:upper:]' <<< $PREFIX)
+PROJECT_CLASSPATH=$UPPER_PREFIX"_CLASSPATH"
+
+if [ -z `eval "echo $"$PROJECT_CLASSPATH` ]; then
+  echo "You must set the $PROJECT_CLASSPATH var" >&2
+  exit 1
+fi
+
+PROJECT_CLASSPATH=`eval "echo $"$PROJECT_CLASSPATH`
+properties=""
+is_empty() {
+  if [ "x$1" = "x" ]; then
+    echo "true"
+    return
+  fi
+  echo "false"
+}
+
+add_property() {
+  if [ $(is_empty "$2") == "false" ]; then
+    properties="$properties -D$PREFIX.$1=$2"
+  else
+    properties="$properties -D$PREFIX.$1"
+  fi
+}
+
+has_property() {
+  if grep -q -v "D$PREFIX.$1" <<< $properties; then
+    echo "false"
+    return
+  fi
+  echo "true"
+}
+
+needs_value() {
+  if [[ "$1" == -* ]] || [ "x$1" == "x" ]; then
+    echo "false"
+    return
+  fi
+  echo "true"
+}
+
+usage() {
+  echo "$USAGE"
+}
+
+version() {
+  echo "@project.version@"
+}
+
+run() {
+  daemon=$1
+  properties=$2
+    
+  if [ "x$daemon" = "x" ]; then
+    exec "$JAVA" -D@project.name@.path.home="$PROJECT_HOME" -cp "$PROJECT_CLASSPATH" $properties \
+	@project.main@
+  else
+    exec "$JAVA" -D@project.name@.path.home="$PROJECT_HOME" -cp "$PROJECT_CLASSPATH" $properties \
+	@project.main@ <&- &
+    
+    return $?
+  fi
+}
+
+ARGV=""
+while [ $# -gt 0 ]
+do
+  case $1 in 
+    --*) if [ $(has_property "${1#--}") = "false" ]; then
+	   if [ $(needs_value "$2") = "true" ]; then
+	     add_property "${1#--}" "$2"
+	   else
+	     add_property "${1#--}"
+	   fi
+	 fi
+	 shift 1
+	 ;;
+     *) ARGV="$ARGV $1"; shift
+  esac
+done
+
+if [ $(has_property "version") = "true" ]; then
+  version
+  exit 0
+fi
+
+if [ $(has_property "help") = "true" ]; then
+  usage 
+  exit 0
+fi
+
+args=`getopt Vc:hdp:D: $ARGV`
+eval set -- "$args"
+
+re="([a-zA-Z]+)+ *(<[a-zA-Z]+>)*"
+while true; do
+  case $1 in
+    -v) 
+        version
+	exit 0
+	;;
+    -h)
+        usage
+	exit 0
+	;;
+    -d) 
+        daemon="yes"
+	shift
+	;;
+    -D)
+	properties="$properties -D$2"
+        shift 2
+        ;;
+    --) 
+	shift
+	break
+	;;
+     *)
+        property=$(sed "s/.*$1,\{1\} -\{2\}\([[:alpha:]]\+ \{0,1\}<\{0,1\}[[:alpha:]]\+>\{0,1\}\).*$/\1/" <<< $USAGE)
+	
+        if [[ $property =~ $re ]]; then
+	  key="${BASH_REMATCH[1]}"
+	  value="${BASH_REMATCH[2]}"
+	
+          if [ $(has_property "$key") == "false" ]; then
+            if [ $(is_empty "$value") = "false" ]; then
+	      add_property "$key" "$2"
+	      shift 2
+	    else
+	      add_property "$key"
+	      shift
+	    fi
+	  else
+	    shift
+	  fi
+	fi
+	;;
+  esac
+done
+
+run "$daemon" "$properties"
+
+exit $?
