@@ -5,8 +5,6 @@ Usage: $0 [options]
 
 Options:
   -d, --daemon
-  -c, --config <c>
-  -p, --pid <p>
   -v, --version
   -h, --help
 EOF
@@ -140,10 +138,26 @@ if [ $(has_property "help") = "true" ]; then
   exit 0
 fi
 
-args=`getopt Vc:hdp:D: $ARGV`
+re="\-([a-zA-Z]), --([a-zA-Z]+)+ *(<[a-zA-Z]+>)*"
+options=`grep -o '\-[a-zA-Z], \-\{2\}[a-zA-Z]\{1,\} *<*[a-zA-Z]*>*' <<< $USAGE`
+OLD_IFS=$IFS
+IFS=$'\n' options=($options)
+optstring=""
+for option in "${options[@]}"
+do
+  if [[ $option =~ $re ]]; then
+    optstring="$optstring${BASH_REMATCH[1]}"
+    if [ $(is_empty "${BASH_REMATCH[3]}") = "false" ]; then
+      optstring="$optstring:"
+    fi
+  fi
+done
+IFS=$OLD_IFS
+
+optstring=$optstring"D:"
+args=`getopt $optstring $ARGV`
 eval set -- "$args"
 
-re="([a-zA-Z]+)+ *(<[a-zA-Z]+>)*"
 while true; do
   case $1 in
     -v) 
@@ -167,11 +181,11 @@ while true; do
 	break
 	;;
      *)
-        property=$(sed "s/.*$1,\{1\} -\{2\}\([[:alpha:]]\+ \{0,1\}<\{0,1\}[[:alpha:]]\+>\{0,1\}\).*$/\1/" <<< $USAGE)
+        property=$(grep -o "\\$1, \-\{2\}[a-zA-Z]\{1,\} *<*[a-zA-Z]*>*" <<< $USAGE)
 	
         if [[ $property =~ $re ]]; then
-	  key="${BASH_REMATCH[1]}"
-	  value="${BASH_REMATCH[2]}"
+	  key="${BASH_REMATCH[2]}"
+	  value="${BASH_REMATCH[3]}"
 	
           if [ $(has_property "$key") == "false" ]; then
             if [ $(is_empty "$value") = "false" ]; then
