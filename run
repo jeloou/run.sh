@@ -55,6 +55,7 @@ if [ -z `eval "echo $"$PROJECT_CLASSPATH` ]; then
 fi
 
 PROJECT_CLASSPATH=`eval "echo $"$PROJECT_CLASSPATH`
+re="\-([a-zA-Z]), --([a-zA-Z]+)+ *(<[a-zA-Z]+>)*"
 properties=""
 is_empty() {
   if [ "x$1" = "x" ]; then
@@ -65,11 +66,7 @@ is_empty() {
 }
 
 add_property() {
-  if [ $(is_empty "$2") == "false" ]; then
-    properties="$properties -D$PREFIX.$1=$2"
-  else
-    properties="$properties -D$PREFIX.$1"
-  fi
+  properties="$properties -D$PREFIX.$1=$2"
 }
 
 has_property() {
@@ -80,12 +77,33 @@ has_property() {
   echo "true"
 }
 
-needs_value() {
-  if [[ "$1" == -* ]] || [ "x$1" == "x" ]; then
+get_option() {
+  if [ $(is_empty "$2") = true ]; then
+    echo $(grep -o "\-[a-zA-Z], \-\{2\}\b"$1"\b \{0,1\}<*[a-zA-Z]*>*" <<< $USAGE)
+    return 
+  fi
+    
+  echo $(grep -o "\-\b"$1"\b, \-\{2\}[a-zA-Z]\{1,\} \{0,1\}<*[a-zA-Z]*>*" <<< $USAGE)
+}
+
+has_option() {
+  if [ $(is_empty $(get_option "$1" "$2")) = true ]; then
     echo "false"
     return
   fi
   echo "true"
+}
+
+needs_value() {
+  option=$(get_option "$1")
+
+  if [[ $option =~ $re ]]; then
+    if [ $(is_empty "${BASH_REMATCH[3]}") = true ]; then
+      echo false
+      return
+    fi
+    echo true
+  fi
 }
 
 usage() {
@@ -114,17 +132,35 @@ run() {
 ARGV=""
 while [ $# -gt 0 ]
 do
-  case $1 in 
-    --*) if [ $(has_property "${1#--}") = "false" ]; then
-	   if [ $(needs_value "$2") = "true" ]; then
-	     add_property "${1#--}" "$2"
-	   else
-	     add_property "${1#--}"
-	   fi
+  case $1 in
+    --*)
+	 k="${1#--}"
+	 if [ $(has_option "$k") = "false" ]; then
+	   cat >&2 <<EOF
+Error: You're passing the invalid option --$k to the script
+EOF
+	   exit 1
 	 fi
-	 shift 1
-	 ;;
-     *) ARGV="$ARGV $1"; shift
+	 
+         if [ $(has_property "$k") = "false" ]; then
+           v="yes"
+	   if [ $(needs_value "$k") = "true" ]; then
+	     if [[ "$2" == -* ]] || [ $(is_empty "$2") = "true" ]; then
+	       cat >&2 <<EOF
+Error: The option --$k was expecting a value
+EOF
+	       exit 1
+	     fi
+             v=$2
+           fi
+           add_property "$k" "$v"
+         else
+	   exit 1
+	 fi
+	 shift
+         ;;
+     *) 
+        ARGV="$ARGV $1"; shift
   esac
 done
 
@@ -138,10 +174,11 @@ if [ $(has_property "help") = "true" ]; then
   exit 0
 fi
 
-re="\-([a-zA-Z]), --([a-zA-Z]+)+ *(<[a-zA-Z]+>)*"
 options=`grep -o '\-[a-zA-Z], \-\{2\}[a-zA-Z]\{1,\} *<*[a-zA-Z]*>*' <<< $USAGE`
 OLD_IFS=$IFS
 IFS=$'\n' options=($options)
+IFS=$OLD_IFS
+
 optstring=""
 for option in "${options[@]}"
 do
@@ -152,7 +189,6 @@ do
     fi
   fi
 done
-IFS=$OLD_IFS
 
 optstring=$optstring"D:"
 args=`getopt $optstring $ARGV`
@@ -181,18 +217,18 @@ while true; do
 	break
 	;;
      *)
-        property=$(grep -o "\\$1, \-\{2\}[a-zA-Z]\{1,\} *<*[a-zA-Z]*>*" <<< $USAGE)
-	
-        if [[ $property =~ $re ]]; then
-	  key="${BASH_REMATCH[2]}"
-	  value="${BASH_REMATCH[3]}"
-	
-          if [ $(has_property "$key") == "false" ]; then
-            if [ $(is_empty "$value") = "false" ]; then
-	      add_property "$key" "$2"
+        k="${1#-}"
+        option=$(get_option "$k" true)
+        if [[ $option =~ $re ]]; then
+	  k="${BASH_REMATCH[2]}"
+	  ev="${BASH_REMATCH[3]}"
+	  
+	  if [ $(has_property "$k") = false ]; then
+            if [ $(is_empty "$ev") = false ]; then
+	      add_property "$k" "$2"
 	      shift 2
 	    else
-	      add_property "$key"
+	      add_property "$k" 'yes'
 	      shift
 	    fi
 	  else
