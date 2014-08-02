@@ -10,6 +10,8 @@ Options:
 EOF
 )
 
+# Maven will replace project.name with your project name. If the project has not 
+# been compiled yet, the script will throw an error.
 IS_PACKAGED='@project.name@'
 if [ "$IS_PACKAGED" != '<your project name>' ]; then
   cat >&2 <<EOF
@@ -18,6 +20,7 @@ EOF
   exit 1;
 fi
 
+# This will resolve the symbolic link, if any.
 SCRIPT="$0"
 while [ -h "$SCRIPT" ] ; do
   ls=`ls -ld "$SCRIPT"`
@@ -47,8 +50,10 @@ fi
 
 PREFIX='@project.name@'
 UPPER_PREFIX=$(tr '[:lower:]' '[:upper:]' <<< $PREFIX)
-PROJECT_CLASSPATH=$UPPER_PREFIX"_CLASSPATH"
 
+# PROJECT_CLASSPATH contains the name of your classes dir. This will
+# throw and error if the variable has not been created.
+PROJECT_CLASSPATH=$UPPER_PREFIX"_CLASSPATH"
 if [ -z `eval "echo $"$PROJECT_CLASSPATH` ]; then
   echo "You must set the $PROJECT_CLASSPATH var" >&2
   exit 1
@@ -174,6 +179,7 @@ if [ $(has_property "help") = true ]; then
   exit 0
 fi
 
+# Automatically generates the getopt opstring using USAGE
 options=`grep -o '\-[a-zA-Z], \-\{2\}[a-zA-Z]\{1,\} *<*[a-zA-Z]*>*' <<< $USAGE`
 OLD_IFS=$IFS
 IFS=$'\n' options=($options)

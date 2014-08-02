@@ -21,7 +21,7 @@ Your script will be ready to run with a couple of basic options.
   	  -v, --version
   	  -h, --help
       
-More options can be added just by modifying the `USAGE` variable, you can add a new option by adding `-p, --pid` or `-p, --pid <p>`, if the option takes a value . All those options will be pass to your app like system properties, using your app name as a prefix. They can be accesed like this
+More options can be added just by modifying the `USAGE` variable, you can add a new option by adding `-p, --pid` or `-p, --pid <p>`, if the option takes a value . All those options will be pass to your app as system properties, using your app name as prefix. They can be accessed like this
 
 ```java
   package com.example.bootstrap.App;
