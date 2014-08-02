@@ -59,10 +59,10 @@ re="\-([a-zA-Z]), --([a-zA-Z]+)+ *(<[a-zA-Z]+>)*"
 properties=""
 is_empty() {
   if [ "x$1" = "x" ]; then
-    echo "true"
+    echo true
     return
   fi
-  echo "false"
+  echo false
 }
 
 add_property() {
@@ -71,10 +71,10 @@ add_property() {
 
 has_property() {
   if grep -q -v "D$PREFIX.$1" <<< $properties; then
-    echo "false"
+    echo false
     return
   fi
-  echo "true"
+  echo true
 }
 
 get_option() {
@@ -88,10 +88,10 @@ get_option() {
 
 has_option() {
   if [ $(is_empty $(get_option "$1" "$2")) = true ]; then
-    echo "false"
+    echo false
     return
   fi
-  echo "true"
+  echo true
 }
 
 needs_value() {
@@ -135,17 +135,17 @@ do
   case $1 in
     --*)
 	 k="${1#--}"
-	 if [ $(has_option "$k") = "false" ]; then
+	 if [ $(has_option "$k") = false ]; then
 	   cat >&2 <<EOF
 Error: You're passing the invalid option --$k to the script
 EOF
 	   exit 1
 	 fi
 	 
-         if [ $(has_property "$k") = "false" ]; then
-           v="yes"
-	   if [ $(needs_value "$k") = "true" ]; then
-	     if [[ "$2" == -* ]] || [ $(is_empty "$2") = "true" ]; then
+         if [ $(has_property "$k") = false ]; then
+           v='yes'
+	   if [ $(needs_value "$k") = true ]; then
+	     if [[ "$2" == -* ]] || [ $(is_empty "$2") = true ]; then
 	       cat >&2 <<EOF
 Error: The option --$k was expecting a value
 EOF
@@ -164,12 +164,12 @@ EOF
   esac
 done
 
-if [ $(has_property "version") = "true" ]; then
+if [ $(has_property "version") = true ]; then
   version
   exit 0
 fi
 
-if [ $(has_property "help") = "true" ]; then
+if [ $(has_property "help") = true ]; then
   usage 
   exit 0
 fi
@@ -184,7 +184,7 @@ for option in "${options[@]}"
 do
   if [[ $option =~ $re ]]; then
     optstring="$optstring${BASH_REMATCH[1]}"
-    if [ $(is_empty "${BASH_REMATCH[3]}") = "false" ]; then
+    if [ $(is_empty "${BASH_REMATCH[3]}") = false ]; then
       optstring="$optstring:"
     fi
   fi
@@ -192,7 +192,7 @@ done
 
 optstring=$optstring"D:"
 err=$(getopt $optstring $ARGV 2>&1 > /dev/null)
-if [ $(is_empty "$err") != "true" ]; then
+if [ $(is_empty "$err") != true ]; then
   cat >&2 <<EOF
 Error: You're passing the invalid option -$(sed "s/.*'\(.*\)'/\1/" <<< $err) to the script
 EOF
@@ -213,7 +213,7 @@ while true; do
 	exit 0
 	;;
     -d) 
-        daemon="yes"
+        daemon='yes'
 	shift
 	;;
     -D)
