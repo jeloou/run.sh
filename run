@@ -15,7 +15,7 @@ EOF
 IS_PACKAGED='@project.name@'
 if [ "$IS_PACKAGED" != '<your project name>' ]; then
   cat >&2 <<EOF
-Error: you must build the project with Maven before you can run @project.name@.
+Error: you must build the project with Maven before you can run it.
 EOF
   exit 1;
 fi
