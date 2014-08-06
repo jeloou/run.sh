@@ -60,7 +60,7 @@ if [ -z `eval "echo $"$PROJECT_CLASSPATH` ]; then
 fi
 
 PROJECT_CLASSPATH=`eval "echo $"$PROJECT_CLASSPATH`
-re="\-([a-zA-Z]), --([a-zA-Z]+)+ *(<[a-zA-Z]+>)*"
+re="-*([a-zA-Z])*,* *--([a-zA-Z]+)+ *(<[a-zA-Z]+>)*"
 properties=""
 is_empty() {
   if [ "x$1" = "x" ]; then
@@ -84,8 +84,8 @@ has_property() {
 
 get_option() {
   if [ $(is_empty "$2") = true ]; then
-    echo $(grep -o "\-[a-zA-Z], \-\{2\}\b"$1"\b \{0,1\}<*[a-zA-Z]*>*" <<< $USAGE)
-    return 
+    echo $(grep -o -E "(-[a-zA-Z]{1}, )?-{2}"$1"{1,}( <[a-zA-Z]>)?" <<< $USAGE)
+    return
   fi
     
   echo $(grep -o "\-\b"$1"\b, \-\{2\}[a-zA-Z]\{1,\} \{0,1\}<*[a-zA-Z]*>*" <<< $USAGE)
