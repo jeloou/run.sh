@@ -199,8 +199,16 @@ done
 optstring=$optstring"D:"
 err=$(getopt $optstring $ARGV 2>&1 > /dev/null)
 if [ $(is_empty "$err") != true ]; then
+  option=$(sed "s/.*'\(.*\)'/\1/" <<< $err)
+  if [ $(is_empty `grep -o "requires" <<< $err`) = false ]; then
+    cat >&2 <<EOF
+Error: The option --$option was expecting a value
+EOF
+    exit 1
+  fi
+  
   cat >&2 <<EOF
-Error: You're passing the invalid option -$(sed "s/.*'\(.*\)'/\1/" <<< $err) to the script
+Error: You're passing the invalid option -$option to the script
 EOF
   exit 1
 fi
