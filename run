@@ -87,8 +87,8 @@ get_option() {
     echo $(grep -o -E "(-[a-zA-Z]{1}, )?-{2}"$1"{1,}( <[a-zA-Z]>)?" <<< $USAGE)
     return
   fi
-    
-  echo $(grep -o "\-\b"$1"\b, \-\{2\}[a-zA-Z]\{1,\} \{0,1\}<*[a-zA-Z]*>*" <<< $USAGE)
+  
+  echo $(grep -o -E "\-"$1"{1}, -{2}[a-zA-Z]{1,}( <[a-zA-Z]>)?" <<< $USAGE)
 }
 
 has_option() {
@@ -180,7 +180,7 @@ if [ $(has_property "help") = true ]; then
 fi
 
 # Automatically generates the getopt opstring using USAGE
-options=`grep -o '\-[a-zA-Z], \-\{2\}[a-zA-Z]\{1,\} *<*[a-zA-Z]*>*' <<< $USAGE`
+options=$(grep -o -E "\-[a-zA-Z]{1}, -{2}[a-zA-Z]{1,}( <[a-zA-Z]>)?" <<< $USAGE)
 OLD_IFS=$IFS
 IFS=$'\n' options=($options)
 IFS=$OLD_IFS
