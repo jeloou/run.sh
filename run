@@ -54,6 +54,23 @@ UPPER_PREFIX=$(tr '[:lower:]' '[:upper:]' <<< $PREFIX)
 # PROJECT_CLASSPATH contains the name of your classes dir. This will
 # throw and error if the variable has not been created.
 PROJECT_CLASSPATH=$UPPER_PREFIX"_CLASSPATH"
+PROJECT_INCLUDE=$UPPER_PREFIX"_INCLUDE"
+
+if [ -z `eval "echo $"$PROJECT_INCLUDE` ]; then
+  for include in /usr/share/@project.name@/@project.name@.in.sh \
+                 /usr/local/share/@project.name@/@project.name@.in.sh \
+                 /opt/@project.name@/@project.name@.in.sh \
+                 ~/.@project.name@.in.sh \
+                 "`dirname $0`"/@project.name@.in.sh; do
+    if [ -r "$include" ]; then
+      . "$include"
+      break
+    fi
+  done
+elif [ -r "`eval "echo $"$PROJECT_INCLUDE`" ]; then
+  . "`eval "echo $"$PROJECT_INCLUDE`"
+fi
+
 if [ -z `eval "echo $"$PROJECT_CLASSPATH` ]; then
   echo "You must set the $PROJECT_CLASSPATH var" >&2
   exit 1
