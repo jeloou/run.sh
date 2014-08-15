@@ -35,6 +35,8 @@ More options can be added just by modifying the `USAGE` variable, you can add a 
 
 The script needs an enviroment variable with the path of your classes dir. This var needs to be named after your project, an example is `APP_CLASSPATH`.
 
+run.sh also tries to include a file, which can be used to add variables to the script. The file should be named after your project and finish with `in.sh`, and will be looked in `/usr/share/${project.name}/`, `/usr/local/share/${project.name}/`, `/opt/${project.name}/` and `~/.${project.name}.in.sh`. There's an example file available in the repo.
+
 ## Contributing 
 Feel free to open a pull request with a nice feature or a fix for some bug.
 
